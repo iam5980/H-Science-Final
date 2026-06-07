@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Howard's Science Quiz</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;background:#f0f4f8;min-height:100vh}
+:root{
+  --max-w:560px;--card-pad:28px 28px 24px;--font-q:17px;--font-btn:14px;
+  --font-choice:14px;--badge-font:11px;--hero-h1:26px;--tf-font:15px;
+}
+@media(min-width:768px){:root{
+  --max-w:700px;--card-pad:38px 40px 32px;--font-q:22px;--font-btn:16px;
+  --font-choice:17px;--badge-font:13px;--hero-h1:34px;--tf-font:18px;
+}}
+@media(min-width:1024px){:root{
+  --max-w:820px;--card-pad:44px 52px 40px;--font-q:24px;--font-btn:17px;
+  --font-choice:18px;--badge-font:14px;--hero-h1:38px;--tf-font:20px;
+}}
+#topbar{position:sticky;top:0;z-index:99;background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+#topbar .logo{font-size:clamp(20px,3vw,28px)}
+#topbar .title{font-weight:800;color:#1e293b;font-size:clamp(15px,2.2vw,20px)}
+#homebtn{margin-left:auto;background:none;border:1px solid #e2e8f0;border-radius:8px;padding:7px 16px;font-size:clamp(12px,1.5vw,15px);color:#64748b;cursor:pointer;font-weight:600;display:none;font-family:inherit}
+.screen{display:none;max-width:var(--max-w);margin:0 auto;padding:24px 16px}
+.screen.active{display:block}
+#resultScreen{max-width:var(--max-w)}
+.card{background:#fff;border-radius:20px;padding:var(--card-pad);box-shadow:0 4px 24px rgba(0,0,0,.08);border:1.5px solid #e2e8f0;margin-bottom:16px}
+.prog-wrap{margin-bottom:20px}
+.prog-labels{display:flex;justify-content:space-between;font-size:clamp(12px,1.8vw,16px);color:#64748b;margin-bottom:5px}
+.prog-track{background:#e2e8f0;border-radius:99px;height:clamp(8px,1.2vw,12px);overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#6366f1);border-radius:99px;transition:width .4s ease}
+.score-live{display:flex;gap:12px}
+.score-c{color:#16a34a;font-weight:700}
+.score-w{color:#dc2626;font-weight:700}
+.badge{border-radius:99px;padding:3px 12px;font-size:var(--badge-font);font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid transparent;display:inline-block}
+.badge-Ecosystems{background:#e0f2fe;color:#0c4a6e;border-color:#0284c733}
+.badge-Adaptations{background:#fef3c7;color:#78350f;border-color:#d9770633}
+.badge-Plants{background:#dcfce7;color:#14532d;border-color:#16a34a33}
+.badge-Oral{background:#f3e8ff;color:#6b21a8;border-color:#9333ea33}
+.q-meta{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.q-type{font-size:clamp(11px,1.4vw,14px);color:#94a3b8;margin-left:auto;font-weight:600}
+.q-text{font-size:var(--font-q);font-weight:700;color:#1e293b;line-height:1.6;margin-bottom:24px}
+#spellWrap input{width:100%;padding:clamp(12px,2vw,18px) clamp(14px,2.5vw,20px);font-size:clamp(15px,2.2vw,20px);border-radius:14px;border:2px solid #94a3b855;outline:none;font-family:inherit;color:#1e293b;margin-bottom:14px;transition:border .2s,background .2s}
+#spellWrap input:focus{border-color:#3b82f6}
+#spellWrap input.correct{border-color:#86efac;background:#f0fdf4}
+#spellWrap input.wrong{border-color:#fca5a5;background:#fff5f5}
+.choice-btn{width:100%;padding:clamp(12px,2vw,18px) clamp(14px,2.5vw,20px);font-size:var(--font-choice);font-weight:600;border-radius:14px;border:2px solid #e2e8f0;background:#fff;text-align:left;cursor:pointer;font-family:inherit;color:#1e293b;margin-bottom:12px;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
+.choice-btn:hover:not(:disabled){background:rgba(59,130,246,.08);border-color:#3b82f6}
+.choice-btn.correct{background:#f0fdf4!important;border-color:#86efac!important;color:#15803d!important}
+.choice-btn.wrong{background:#fff5f5!important;border-color:#fca5a5!important;color:#b91c1c!important}
+.choice-btn.dim{opacity:.4}
+#tfWrap{display:flex;gap:16px}
+.tf-btn{flex:1;padding:clamp(14px,2.5vw,22px);font-size:var(--tf-font);font-weight:800;border-radius:16px;cursor:pointer;font-family:inherit;border:2px solid transparent;transition:transform .15s,opacity .2s}
+.tf-btn:hover:not(:disabled){transform:scale(1.04)}
+.tf-true{background:#dcfce7;color:#166534;border-color:#16a34a44}
+.tf-false{background:#fee2e2;color:#991b1b;border-color:#dc262644}
+.tf-btn.correct{background:#f0fdf4!important;border-color:#16a34a!important}
+.tf-btn.wrong{background:#fff5f5!important;border-color:#dc2626!important}
+.tf-btn.dim{opacity:.35}
+#feedbackPanel{margin-top:20px;border-radius:18px;padding:clamp(16px,2.5vw,24px);border:2px solid transparent;display:none;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+#feedbackPanel.correct{background:#f0fdf4;border-color:#86efac}
+#feedbackPanel.wrong{background:#fff5f5;border-color:#fca5a5}
+.fb-row{display:flex;align-items:center;gap:12px}
+.fb-icon{width:clamp(36px,5vw,50px);height:clamp(36px,5vw,50px);border-radius:50%;color:#fff;font-size:clamp(18px,2.5vw,24px);font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fb-icon.correct{background:#16a34a}
+.fb-icon.wrong{background:#dc2626}
+.fb-label{font-size:clamp(16px,2.5vw,22px);font-weight:800}
+.fb-label.correct{color:#15803d}
+.fb-label.wrong{color:#b91c1c}
+.fb-detail{margin-top:12px;margin-left:clamp(46px,7vw,62px)}
+.fb-your{font-size:clamp(13px,1.8vw,17px);color:#64748b;margin-bottom:5px}
+.fb-your b{color:#dc2626}
+.fb-ans{font-size:clamp(14px,2vw,19px);color:#15803d;font-weight:700}
+.fb-ans span{background:#dcfce7;border:1.5px solid #86efac;border-radius:8px;padding:3px 12px;display:inline-block;margin-top:3px}
+.fb-next-row{margin-top:16px;display:flex;justify-content:flex-end}
+#oralWrap{display:none}
+.oral-btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.oral-answer-box{background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:clamp(14px,2vw,22px);font-size:clamp(14px,2vw,18px);color:#14532d;line-height:1.9;display:none}
+.oral-answer-box b{font-weight:800;color:#15803d;display:block;margin-bottom:8px}
+#skipBtn{display:block;margin:14px auto 0;background:none;border:none;color:#94a3b8;font-size:clamp(13px,1.8vw,16px);cursor:pointer;text-decoration:underline;font-family:inherit}
+.btn{color:#fff;border:none;border-radius:12px;padding:clamp(10px,1.5vw,14px) clamp(18px,2.5vw,28px);font-size:var(--font-btn);font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px;display:inline-flex;align-items:center;gap:8px;transition:opacity .15s,transform .1s}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.btn-blue{background:#3b82f6}
+.btn-navy{background:#1d4ed8}
+.btn-green{background:#16a34a}
+.btn-red{background:#dc2626}
+.btn-purple{background:#9333ea}
+.btn-orange{background:#ea580c}
+.btn-gray{background:#f1f5f9;color:#475569!important}
+.btn-wide{width:100%;justify-content:center;font-size:clamp(16px,2.5vw,22px);padding:clamp(16px,2.5vw,22px);border-radius:18px;box-shadow:0 4px 16px rgba(29,78,216,.2)}
+.hero{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 60%,#3b82f6 100%);border-radius:24px;padding:clamp(28px,4vw,48px);color:#fff;margin-bottom:24px;box-shadow:0 8px 32px rgba(30,64,175,.2)}
+.hero-emoji{font-size:clamp(36px,5vw,52px);margin-bottom:10px}
+.hero h1{font-size:var(--hero-h1);font-weight:900;letter-spacing:-.5px;margin-bottom:6px}
+.hero p{font-size:clamp(13px,1.8vw,17px);opacity:.8}
+.hero p.sub{font-size:clamp(12px,1.6vw,15px);opacity:.65;margin-top:5px}
+.settings-card{background:#fff;border-radius:20px;padding:clamp(20px,3vw,36px);box-shadow:0 2px 16px rgba(0,0,0,.06);border:1.5px solid #e2e8f0;margin-bottom:22px}
+.settings-title{font-size:clamp(13px,1.8vw,17px);font-weight:800;color:#475569;letter-spacing:.6px;text-transform:uppercase;margin-bottom:20px}
+.lbl{font-size:clamp(11px,1.5vw,14px);font-weight:700;color:#64748b;margin-bottom:8px;margin-top:18px;letter-spacing:.4px;text-transform:uppercase}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg-btn{padding:clamp(6px,1vw,10px) clamp(12px,1.8vw,20px);border-radius:99px;font-size:clamp(12px,1.6vw,16px);font-weight:700;cursor:pointer;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;transition:all .15s;font-family:inherit}
+.seg-btn.active{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
+input[type=range]{width:100%;accent-color:#3b82f6;margin-top:6px}
+.range-labels{display:flex;justify-content:space-between;font-size:clamp(11px,1.5vw,14px);color:#94a3b8;margin-top:4px}
+.oral-topics-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+@media(min-width:768px){.oral-topics-grid{grid-template-columns:repeat(4,1fr)}}
+.oral-topic-card{background:linear-gradient(135deg,#f3e8ff,#ede9fe);border:1.5px solid #c4b5fd;border-radius:16px;padding:clamp(14px,2vw,22px);cursor:pointer;text-align:center;transition:all .2s;font-family:inherit}
+.oral-topic-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(147,51,234,.2);border-color:#9333ea}
+.oral-topic-card .ot-emoji{font-size:clamp(24px,4vw,36px);margin-bottom:8px}
+.oral-topic-card .ot-title{font-size:clamp(13px,1.8vw,17px);font-weight:800;color:#6b21a8}
+.oral-topic-card .ot-count{font-size:clamp(11px,1.4vw,14px);color:#9333ea;margin-top:4px}
+.result-card{background:#fff;border-radius:24px;padding:clamp(28px,4vw,44px);box-shadow:0 4px 24px rgba(0,0,0,.08);border:1.5px solid #e2e8f0;text-align:center;margin-bottom:24px}
+.result-pct{font-size:clamp(56px,8vw,80px);font-weight:900;line-height:1}
+.result-label{font-size:clamp(18px,2.8vw,26px);font-weight:700;color:#1e293b;margin:10px 0 5px}
+.result-sub{color:#64748b;font-size:clamp(14px,2vw,18px)}
+.result-btns{display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.review-title{font-size:clamp(14px,2vw,18px);font-weight:800;color:#dc2626;letter-spacing:.5px;margin-bottom:14px;text-transform:uppercase}
+.review-item{background:#fff;border-radius:16px;padding:clamp(14px,2vw,22px);margin-bottom:14px;border:1.5px solid #fecaca;box-shadow:0 2px 8px rgba(220,38,38,.06)}
+.review-q{font-size:clamp(13px,1.8vw,17px);color:#1e293b;margin-bottom:10px;font-weight:600}
+.review-your{font-size:clamp(12px,1.6vw,16px);color:#dc2626;margin-bottom:5px}
+.review-correct{font-size:clamp(12px,1.6vw,16px);color:#16a34a;font-weight:700}
+.legend{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.perfect{text-align:center;color:#16a34a;font-size:clamp(15px,2.2vw,20px);font-weight:700;padding:24px}
+.source-note{font-size:11px;color:#94a3b8;text-align:center;margin-top:16px;line-height:1.6}
+@media(max-width:400px){#tfWrap{flex-direction:column}}
+
+/* ── RECORDING UI ── */
+.rec-section{margin-top:18px;background:#fdf4ff;border:1.5px solid #d8b4fe;border-radius:16px;padding:clamp(14px,2vw,22px)}
+.rec-title{font-size:clamp(12px,1.6vw,15px);font-weight:800;color:#6b21a8;letter-spacing:.4px;text-transform:uppercase;margin-bottom:12px}
+.rec-btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn-rec{background:#dc2626}
+.btn-rec.recording{background:#991b1b;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.rec-timer{font-size:clamp(13px,1.8vw,16px);font-weight:800;color:#dc2626;min-width:40px}
+.rec-status{font-size:clamp(12px,1.6vw,14px);color:#94a3b8;margin-bottom:10px;min-height:18px}
+.rec-playback{width:100%;margin-top:8px;border-radius:8px;display:none;accent-color:#9333ea}
+.rec-compare{display:none;margin-top:14px;padding-top:14px;border-top:1px solid #e9d5ff}
+.rec-compare-title{font-size:clamp(11px,1.5vw,14px);font-weight:800;color:#6b21a8;margin-bottom:8px}
+.rec-compare-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;background:#fff;border-radius:10px;padding:10px 14px;border:1px solid #e9d5ff}
+.rec-compare-label{font-size:clamp(11px,1.4vw,13px);font-weight:700;min-width:80px;color:#475569}
+audio{flex:1;height:36px}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <span class="logo">🔬</span>
+  <span class="title">Howard's Science Quiz</span>
+  <button id="homebtn" onclick="goHome()">← Home</button>
+</div>
+
+<!-- HOME -->
+<div id="homeScreen" class="screen active">
+  <div class="hero">
+    <div class="hero-emoji">🔬</div>
+    <h1>Howard's Science Quiz</h1>
+    <p>Unit 1: Ecosystems · Unit 2: Animal Adaptations · Unit 3: Plants</p>
+    <p class="sub" id="totalCount"></p>
+  </div>
+  <div class="settings-card">
+    <div class="settings-title">💬 Oral Exam Practice</div>
+    <div class="oral-topics-grid" id="oralTopicsGrid"></div>
+  </div>
+  <div class="settings-card">
+    <div class="settings-title">📝 Written Quiz Settings</div>
+    <div class="lbl">Topic</div><div class="seg" id="topicSeg"></div>
+    <div class="lbl">Question Type</div><div class="seg" id="typeSeg"></div>
+    <div class="lbl">Order</div><div class="seg" id="modeSeg"></div>
+    <div class="lbl" id="countLbl"></div>
+    <input type="range" id="countRange" min="1" value="10" oninput="updateCount()">
+    <div class="range-labels"><span>1</span><span id="rangeMax"></span></div>
+  </div>
+  <button class="btn btn-navy btn-wide" onclick="startQuiz()">Start Quiz 🚀</button>
+  <div class="legend">
+    <span class="badge badge-Ecosystems">Ecosystems</span>
+    <span class="badge badge-Adaptations">Adaptations</span>
+    <span class="badge badge-Plants">Plants</span>
+    <span class="badge badge-Oral">Oral</span>
+  </div>
+  <p class="source-note">All questions are based strictly on the course textbook full text and Howard's class worksheets.</p>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <div class="prog-wrap">
+    <div class="prog-labels">
+      <span id="progText">Q 1 / 10</span>
+      <div class="score-live"><span class="score-c" id="scoreC">✓ 0</span><span class="score-w" id="scoreW">✗ 0</span></div>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+  <div class="card">
+    <div class="q-meta"><span id="qBadge" class="badge"></span><span id="qType" class="q-type"></span></div>
+    <p id="qText" class="q-text"></p>
+    <div id="spellWrap" style="display:none">
+      <input type="text" id="spellInput" placeholder="Type your answer…" autocomplete="off">
+      <button class="btn btn-blue" id="checkSpellBtn" onclick="checkSpell()">Check Answer ✓</button>
+    </div>
+    <div id="mcWrap" style="display:none"></div>
+    <div id="tfWrap" style="display:none">
+      <button class="tf-btn tf-true" id="tfTrue" onclick="submitAnswer('true')">✓  True</button>
+      <button class="tf-btn tf-false" id="tfFalse" onclick="submitAnswer('false')">✗  False</button>
+    </div>
+    <div id="oralWrap" style="display:none">
+      <!-- Row 1: question audio + reveal -->
+      <div class="oral-btn-row">
+        <button class="btn btn-purple" onclick="speakQuestion()">🔊 Read Question</button>
+        <button class="btn btn-orange" onclick="revealOral()">💡 Show Answer</button>
+        <button class="btn btn-green" id="oralNextBtn" style="display:none" onclick="nextQuestion()">Next →</button>
+      </div>
+
+      <!-- Recording section -->
+      <div class="rec-section">
+        <div class="rec-title">🎙️ Record Your Answer</div>
+        <div class="rec-btn-row">
+          <button class="btn btn-rec" id="recBtn" onclick="toggleRecord()">⏺ Start Recording</button>
+          <span class="rec-timer" id="recTimer"></span>
+        </div>
+        <div class="rec-status" id="recStatus">Tap the button to record your spoken answer.</div>
+
+        <!-- playback row — hidden until recording done -->
+        <div id="recPlayRow" style="display:none;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:700;color:#6b21a8;min-width:80px">▶ Play back:</span>
+          <audio id="myRecording" controls style="flex:1;min-width:200px;height:40px;border-radius:8px"></audio>
+        </div>
+
+        <!-- compare panel — shown after model answer revealed -->
+        <div class="rec-compare" id="recCompare">
+          <div class="rec-compare-title">🔄 Compare: Your Answer vs. Model Answer</div>
+          <div class="rec-compare-item">
+            <span class="rec-compare-label">🎙️ Yours</span>
+            <audio id="myRecording2" controls style="flex:1;height:38px"></audio>
+          </div>
+          <div class="rec-compare-item">
+            <span class="rec-compare-label">📖 Model</span>
+            <button class="btn btn-blue" onclick="speakAnswer()" style="font-size:13px;padding:8px 14px">🔊 Play</button>
+            <button class="btn btn-gray" onclick="stopSpeech()" style="font-size:13px;padding:8px 14px">⏹ Stop</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Model answer box (shown after reveal) -->
+      <div class="oral-answer-box" id="oralAnswerBox" style="margin-top:14px"></div>
+    </div>
+    <div id="feedbackPanel">
+      <div class="fb-row"><div class="fb-icon" id="fbIcon"></div><span class="fb-label" id="fbLabel"></span></div>
+      <div class="fb-detail" id="fbDetail"></div>
+      <div class="fb-next-row"><button class="btn btn-green" id="nextBtn" onclick="nextQuestion()">Next Question →</button></div>
+    </div>
+  </div>
+  <button id="skipBtn" onclick="submitAnswer('__skipped__')">Skip this question</button>
+</div>
+
+<!-- RESULT -->
+<div id="resultScreen" class="screen">
+  <div class="result-card">
+    <div class="result-pct" id="resPct"></div>
+    <div class="result-label" id="resLabel"></div>
+    <div class="result-sub" id="resSub"></div>
+    <div class="result-btns">
+      <button class="btn btn-blue" onclick="retryAll()">Retry All</button>
+      <button class="btn btn-red" id="retryWrongBtn" onclick="retryWrong()" style="display:none"></button>
+      <button class="btn btn-gray" onclick="goHome()">Home</button>
+    </div>
+  </div>
+  <div id="reviewSection"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  QUESTION BANK — 100% based on course full text + worksheets
+//  Source: Howard_Science_Full_Text.docx + Howard_Science_Sheet_Final.pdf
+// ═══════════════════════════════════════════════════════════
+const ALL_Q = [
+
+// ══════════════════════════════════════════════
+// UNIT 1: RELATIONSHIPS IN ECOSYSTEMS
+// ══════════════════════════════════════════════
+
+// —— Spelling (directly from worksheet blanks) ——
+{id:1,  topic:"Ecosystems", type:"spell", q:"Organisms in an ecosystem are in _____ with each other for limited amounts of water, food, energy, and space to live.", a:"competition"},
+{id:2,  topic:"Ecosystems", type:"spell", q:"Members of an ecosystem can be sorted into three main groups: _____, consumers, and decomposers.", a:"producers"},
+{id:3,  topic:"Ecosystems", type:"spell", q:"Organisms that break down and recycle the remains of dead organisms are called _____.", a:"decomposers"},
+{id:4,  topic:"Ecosystems", type:"spell", q:"The order, or sequence, in which organisms eat one another is called a(n) _____ _____.", a:"food chain"},
+{id:5,  topic:"Ecosystems", type:"spell", q:"Different food chains can be connected to form a(n) _____ _____.", a:"food web"},
+{id:6,  topic:"Ecosystems", type:"spell", q:"Energy moves through an ecosystem from plants to herbivores and then to _____.", a:"carnivores"},
+{id:7,  topic:"Ecosystems", type:"spell", q:"A diagram that shows how energy is used in an ecosystem is called a(n) _____ _____.", a:"energy pyramid"},
+{id:8,  topic:"Ecosystems", type:"spell", q:"Organisms that eat only producers (plants) are called _____.", a:"herbivores"},
+{id:9,  topic:"Ecosystems", type:"spell", q:"Animals that eat both producers and consumers are called _____.", a:"omnivores"},
+{id:10, topic:"Ecosystems", type:"spell", q:"A carnivore that hunts for its food is called a _____.", a:"predator"},
+{id:11, topic:"Ecosystems", type:"spell", q:"The organisms that a predator hunts are called _____.", a:"prey"},
+
+// —— Multiple Choice ——
+{id:12, topic:"Ecosystems", type:"mc", q:"I am a living thing that can use energy from the Sun to make my own food. What am I?",
+  choices:["consumer","producer","decomposer","carnivore"], a:"producer"},
+{id:13, topic:"Ecosystems", type:"mc", q:"I am a living thing that must use other organisms as food to get energy. What am I?",
+  choices:["producer","decomposer","consumer","herbivore"], a:"consumer"},
+{id:14, topic:"Ecosystems", type:"mc", q:"I am an organism that breaks down and recycles the remains of dead organisms in an ecosystem. What am I?",
+  choices:["consumer","producer","carnivore","decomposer"], a:"decomposer"},
+{id:15, topic:"Ecosystems", type:"mc", q:"I show the order, or sequence, in which organisms in an ecosystem consume one another. What am I?",
+  choices:["food web","energy pyramid","food chain","competition"], a:"food chain"},
+{id:16, topic:"Ecosystems", type:"mc", q:"I am the struggle that takes place among organisms for food, water, and other things needed to live. What am I?",
+  choices:["mimicry","adaptation","competition","camouflage"], a:"competition"},
+{id:17, topic:"Ecosystems", type:"mc", q:"I am formed when food chains are linked together. What am I?",
+  choices:["food chain","energy pyramid","food web","competition"], a:"food web"},
+{id:18, topic:"Ecosystems", type:"mc", q:"I show the flow of energy through an ecosystem. What am I?",
+  choices:["food web","food chain","energy pyramid","decomposer"], a:"energy pyramid"},
+{id:19, topic:"Ecosystems", type:"mc", q:"Which group of organisms is ALWAYS at the bottom (base) of an energy pyramid?",
+  choices:["carnivores","herbivores","decomposers","producers"], a:"producers"},
+{id:20, topic:"Ecosystems", type:"mc", q:"According to the textbook, only about how much of a plant's energy passes to the herbivore that eats it?",
+  choices:["50%","25%","10%","75%"], a:"10%"},
+{id:21, topic:"Ecosystems", type:"mc", q:"Which of the following animals is described as a carnivore in the textbook?",
+  choices:["raccoon","opossum","osprey","porcupine"], a:"osprey"},
+{id:22, topic:"Ecosystems", type:"mc", q:"Which of the following animals is an example of an omnivore from the textbook?",
+  choices:["shark","deer","bear","osprey"], a:"bear"},
+{id:23, topic:"Ecosystems", type:"mc", q:"In a food chain, what do the arrows show?",
+  choices:["Which animal is bigger","The direction that energy flows","Which animal is faster","Where animals live"], a:"The direction that energy flows"},
+{id:24, topic:"Ecosystems", type:"mc", q:"Why are decomposers often left out of food chain diagrams?",
+  choices:["They are not important","They only eat plants","They take part in every step of the food chain","They do not need energy"], a:"They take part in every step of the food chain"},
+{id:25, topic:"Ecosystems", type:"mc", q:"In the pond food chain described in the textbook, which organism captures energy from the sun during photosynthesis?",
+  choices:["mayfly","sunfish","blue heron","algae"], a:"algae"},
+{id:26, topic:"Ecosystems", type:"mc", q:"Food webs show the relationships between predators and their _____.",
+  choices:["habitats","prey","producers","decomposers"], a:"prey"},
+
+// —— True / False ——
+{id:27, topic:"Ecosystems", type:"tf", q:"Producers are organisms that make their own food using the energy of sunlight.", a:"true"},
+{id:28, topic:"Ecosystems", type:"tf", q:"Herbivores eat only other animals.", a:"false"},
+{id:29, topic:"Ecosystems", type:"tf", q:"Omnivores eat both producers and consumers.", a:"true"},
+{id:30, topic:"Ecosystems", type:"tf", q:"Predators are organisms that are hunted.", a:"false"},
+{id:31, topic:"Ecosystems", type:"tf", q:"A food web shows how all the food chains in an ecosystem are connected.", a:"true"},
+{id:32, topic:"Ecosystems", type:"tf", q:"At each level of the energy pyramid, consumers lose about 90% of the remaining energy.", a:"true"},
+{id:33, topic:"Ecosystems", type:"tf", q:"Decomposers return substances to the ecosystem as nutrients.", a:"true"},
+{id:34, topic:"Ecosystems", type:"tf", q:"Competition happens when organisms struggle for the same limited food, water, and other needs.", a:"true"},
+{id:35, topic:"Ecosystems", type:"tf", q:"A single organism can take part in more than one food chain.", a:"true"},
+{id:36, topic:"Ecosystems", type:"tf", q:"Algae are producers found in lakes and oceans.", a:"true"},
+
+// ══════════════════════════════════════════════
+// UNIT 2: ANIMAL ADAPTATIONS
+// ══════════════════════════════════════════════
+
+// —— Spelling ——
+{id:40, topic:"Adaptations", type:"spell", q:"Physical characteristics or behaviors that help a living thing survive in its environment are called _____.", a:"adaptations"},
+{id:41, topic:"Adaptations", type:"spell", q:"Animals have adaptations that they use to protect themselves from _____.", a:"predators"},
+{id:42, topic:"Adaptations", type:"spell", q:"Some organisms copy the traits of other living things. This adaptation is called _____.", a:"mimicry"},
+{id:43, topic:"Adaptations", type:"spell", q:"When an animal blends in with its environment, this adaptation is called _____.", a:"camouflage"},
+{id:44, topic:"Adaptations", type:"spell", q:"Animals that serve as food for other animals are called _____.", a:"prey"},
+{id:45, topic:"Adaptations", type:"spell", q:"Some animals avoid the cold by sleeping through winter. This is called _____.", a:"hibernating"},
+{id:46, topic:"Adaptations", type:"spell", q:"Many birds change location periodically to survive. This is called to _____.", a:"migrate"},
+{id:47, topic:"Adaptations", type:"spell", q:"The fennec fox has large ears that give off _____.", a:"heat"},
+{id:48, topic:"Adaptations", type:"spell", q:"Camels store fat in their _____.", a:"humps"},
+
+// —— Multiple Choice ——
+{id:49, topic:"Adaptations", type:"mc", q:"According to the textbook, what are adaptations?",
+  choices:["Only physical body features","Only animal behaviors","Physical characteristics OR behaviors that help a living thing survive","The food an animal eats"], a:"Physical characteristics OR behaviors that help a living thing survive"},
+{id:50, topic:"Adaptations", type:"mc", q:"What does the kangaroo rat do to get water in the desert?",
+  choices:["It finds rivers","It drinks from rain puddles","It gets water from the food it eats","It absorbs water through its skin"], a:"It gets water from the food it eats"},
+{id:51, topic:"Adaptations", type:"mc", q:"Why does the hoverfly look like a honeybee?",
+  choices:["To find food more easily","To attract a mate","To avoid predators","To stay warm"], a:"To avoid predators"},
+{id:52, topic:"Adaptations", type:"mc", q:"What happens when the Arctic fox's fur changes color in winter?",
+  choices:["It grows thicker to stay warm","It matches the white snow for camouflage","It copies a more dangerous animal","It warns predators to stay away"], a:"It matches the white snow for camouflage"},
+{id:53, topic:"Adaptations", type:"mc", q:"What do hedgehogs do when a predator comes near?",
+  choices:["They run away","They hibernate","They curl into a ball using their hard spines","They change color"], a:"They curl into a ball using their hard spines"},
+{id:54, topic:"Adaptations", type:"mc", q:"What is an example of a BEHAVIORAL adaptation from the textbook?",
+  choices:["A polar bear's thick fur","A hummingbird's long beak","A hedgehog's spines","A bear hibernating through winter"], a:"A bear hibernating through winter"},
+{id:55, topic:"Adaptations", type:"mc", q:"In the interaction between a flea and a mammal, which organism is helped and which is harmed?",
+  choices:["Both are helped","The flea is helped; the mammal is harmed","The mammal is helped; the flea is harmed","Both are harmed"], a:"The flea is helped; the mammal is harmed"},
+{id:56, topic:"Adaptations", type:"mc", q:"What is the relationship between the fish and the sea turtle described in the textbook?",
+  choices:["The fish harms the turtle","Both the fish and turtle are harmed","The fish eats the turtle's eggs","The fish gets food; the turtle gets its shell cleaned — both are helped"], a:"The fish gets food; the turtle gets its shell cleaned — both are helped"},
+{id:57, topic:"Adaptations", type:"mc", q:"What does the Egyptian plover bird do for the Nile crocodile?",
+  choices:["It warns the crocodile of danger","It picks leeches off the crocodile's mouth","It feeds the crocodile fish","It guards the crocodile's eggs"], a:"It picks leeches off the crocodile's mouth"},
+{id:58, topic:"Adaptations", type:"mc", q:"What can camels do to survive sandstorms in the desert?",
+  choices:["They hibernate","They migrate","They close their nostrils to keep out sand","They change color"], a:"They close their nostrils to keep out sand"},
+
+// —— True / False ——
+{id:59, topic:"Adaptations", type:"tf", q:"Adaptations can be physical characteristics OR behaviors.", a:"true"},
+{id:60, topic:"Adaptations", type:"tf", q:"Camouflage and mimicry are both types of adaptations.", a:"true"},
+{id:61, topic:"Adaptations", type:"tf", q:"Mimicry means an organism blends in with its background colors.", a:"false"},
+{id:62, topic:"Adaptations", type:"tf", q:"The hoverfly has a stinger just like a honeybee.", a:"false"},
+{id:63, topic:"Adaptations", type:"tf", q:"A camel stores water in its humps.", a:"false"},
+{id:64, topic:"Adaptations", type:"tf", q:"When an animal hibernates, it lives off its body fat and uses very little energy.", a:"true"},
+{id:65, topic:"Adaptations", type:"tf", q:"Living things interact in harmful and helpful ways.", a:"true"},
+{id:66, topic:"Adaptations", type:"tf", q:"The Arctic fox's fur stays the same color all year round.", a:"false"},
+{id:67, topic:"Adaptations", type:"tf", q:"A hummingbird's long, narrow beak is a physical adaptation that helps it get food from thin flowers.", a:"true"},
+{id:68, topic:"Adaptations", type:"tf", q:"Desert animals need adaptations that save water.", a:"true"},
+
+// ══════════════════════════════════════════════
+// UNIT 3: PLANTS AND THEIR SURROUNDINGS
+// ══════════════════════════════════════════════
+
+// —— Spelling ——
+{id:70, topic:"Plants", type:"spell", q:"Something in an environment that causes a living thing to react is called a _____.", a:"stimulus"},
+{id:71, topic:"Plants", type:"spell", q:"The response of a plant to something in its environment is called a _____.", a:"tropism"},
+{id:72, topic:"Plants", type:"spell", q:"A plant responds to gravity: its roots grow downward, and its green stems grow _____.", a:"upward"},
+{id:73, topic:"Plants", type:"spell", q:"Deciduous trees lose their _____ in winter to protect themselves from drying out.", a:"leaves"},
+{id:74, topic:"Plants", type:"spell", q:"In spring, deciduous trees grow new leaves and begin _____ again.", a:"photosynthesizing"},
+{id:75, topic:"Plants", type:"spell", q:"A cactus has a thick _____ cover to keep water inside.", a:"waxy"},
+{id:76, topic:"Plants", type:"spell", q:"The responses of plants to light, water, and gravity are all called _____.", a:"tropisms"},
+
+// —— Multiple Choice ——
+{id:77, topic:"Plants", type:"mc", q:"How does a plant respond to a stimulus?",
+  choices:["It grows faster","It changes its direction or pattern of growth","It produces more food","It loses its leaves"], a:"It changes its direction or pattern of growth"},
+{id:78, topic:"Plants", type:"mc", q:"Which of the following is listed as a plant stimulus in the textbook?",
+  choices:["Sound","Light","Temperature only","Smell"], a:"Light"},
+{id:79, topic:"Plants", type:"mc", q:"What did Charles Darwin's experiment help to show?",
+  choices:["That plants can move","That something in the tip of the plant causes it to bend toward light","That roots grow upward","That water causes mimicry"], a:"That something in the tip of the plant causes it to bend toward light"},
+{id:80, topic:"Plants", type:"mc", q:"What is the main adaptation of a cactus described in the textbook?",
+  choices:["It loses its leaves in winter","It has soft tissue that holds water like a sponge and a thick waxy cover","It grows very tall to find sunlight","It migrates during dry season"], a:"It has soft tissue that holds water like a sponge and a thick waxy cover"},
+{id:81, topic:"Plants", type:"mc", q:"Why do most trees in temperate forests lose their leaves in winter?",
+  choices:["To grow new ones immediately","To attract animals","To protect leaves from cold air and drying out","To store more sunlight"], a:"To protect leaves from cold air and drying out"},
+{id:82, topic:"Plants", type:"mc", q:"What does a deciduous tree use for energy in winter when it has no leaves?",
+  choices:["Water from rain","Sunlight through its bark","Stored food","Nutrients from decomposers"], a:"Stored food"},
+{id:83, topic:"Plants", type:"mc", q:"In which direction do plant roots grow in response to water?",
+  choices:["Away from water","Upward","Toward the water source","Sideways only"], a:"Toward the water source"},
+{id:84, topic:"Plants", type:"mc", q:"What causes a plant tropism, according to later experiments after Darwin?",
+  choices:["Sunlight hitting the leaves directly","A chemical that all plants have","The weight of the plant","Gravity pulling on the roots"], a:"A chemical that all plants have"},
+
+// —— True / False ——
+{id:85, topic:"Plants", type:"tf", q:"Plants cannot move around the way most animals can.", a:"true"},
+{id:86, topic:"Plants", type:"tf", q:"Plants respond to light by growing AWAY from the source of light.", a:"false"},
+{id:87, topic:"Plants", type:"tf", q:"A tropism is the response of a plant to something in its environment.", a:"true"},
+{id:88, topic:"Plants", type:"tf", q:"Plants also show tropisms to chemicals and heat.", a:"true"},
+{id:89, topic:"Plants", type:"tf", q:"Deciduous trees use stored food to survive winter without leaves.", a:"true"},
+{id:90, topic:"Plants", type:"tf", q:"A cactus has soft tissue inside that holds water like a sponge.", a:"true"},
+{id:91, topic:"Plants", type:"tf", q:"Without leaves, a tree can still make food using its bark.", a:"false"},
+{id:92, topic:"Plants", type:"tf", q:"Plant roots grow toward water sources.", a:"true"},
+
+// ══════════════════════════════════════════════
+// ORAL EXAM — 4 SUBTOPICS
+// All content strictly from course full text
+// ══════════════════════════════════════════════
+
+// —— Desert Plants ——
+{id:100, topic:"Oral", type:"oral", subtopic:"Desert Plants", emoji:"🌵",
+ q:"Describe TWO adaptations of a cactus that help it survive in the desert. Use details from the textbook.",
+ a:"1. Soft tissue that holds water like a sponge — stores large amounts of water inside the plant.\n2. Thick waxy cover — keeps the water inside and prevents it from drying out.\n(The cactus uses these two adaptations to survive in dry desert environments where water is scarce.)"},
+{id:101, topic:"Oral", type:"oral", subtopic:"Desert Plants", emoji:"🌵",
+ q:"How does the kangaroo rat survive in the desert without needing to drink water?",
+ a:"The kangaroo rat gets water from the food it eats. It never needs to drink directly because the moisture in its food is enough to meet its needs. This is a special desert adaptation for surviving with very little water."},
+{id:102, topic:"Oral", type:"oral", subtopic:"Desert Plants", emoji:"🌵",
+ q:"Compare how a desert plant (cactus) and a temperate forest tree (deciduous tree) each survive a difficult season.",
+ a:"Cactus — survives hot, dry desert conditions by storing water in its spongy tissue and sealing it in with a thick waxy cover.\nDeciduous tree — survives cold winter by losing its leaves to prevent drying out. Without leaves, it cannot make food, so it lives on stored food until spring when new leaves grow back.\nBoth plants have special adaptations that match the challenges of their environment."},
+{id:103, topic:"Oral", type:"oral", subtopic:"Desert Plants", emoji:"🌵",
+ q:"Why do desert animals need special adaptations for water? Give ONE animal example from the textbook.",
+ a:"Desert environments have very little rainfall and high heat, so water is scarce and evaporates quickly. Animals must save or find water in special ways to survive.\nExample: The kangaroo rat never needs to drink — it gets water from the food it eats. The fennec fox has large ears that give off heat to help it stay cool and save water."},
+
+// —— Interactions ——
+{id:110, topic:"Oral", type:"oral", subtopic:"Interactions", emoji:"🦅",
+ q:"What is competition in an ecosystem? Give one example from the textbook.",
+ a:"Competition is the struggle between organisms for food, water, and other needs. When two or more populations need the same resource, they compete for it.\nExample from the textbook: If three populations compete for the same food, one might win out, and the others would have to find different food or move — or they would die."},
+{id:111, topic:"Oral", type:"oral", subtopic:"Interactions", emoji:"🦅",
+ q:"Explain the difference between a harmful interaction and a helpful interaction. Give one example of each from the textbook.",
+ a:"Harmful interaction — only one organism is helped; the other is harmed.\nExample: A flea lives in a mammal's fur and drinks its blood. The flea is helped (gets food); the mammal is harmed.\n\nHelpful interaction — both organisms benefit.\nExample: A fish eats algae off a sea turtle's shell. The fish gets food; the turtle gets its shell cleaned. Both are helped."},
+{id:112, topic:"Oral", type:"oral", subtopic:"Interactions", emoji:"🦅",
+ q:"What is the relationship between predators and prey? How does this show up in a food web?",
+ a:"A predator is a carnivore that hunts for its food. The organisms it hunts are called prey.\nFood webs show the relationships between predators and their prey. A single organism can be prey for one animal and a predator of another. Food webs show all these connections together."},
+{id:113, topic:"Oral", type:"oral", subtopic:"Interactions", emoji:"🦅",
+ q:"Describe the interaction between the Egyptian plover bird and the Nile crocodile. Is this harmful or helpful? Why?",
+ a:"The Egyptian plover bird lives with Nile crocodiles. When the crocodile opens its mouth, the bird picks off any leeches inside.\nThis is a HELPFUL interaction for both animals: The bird gets food (the leeches), and the crocodile gets cleaned. Neither animal is harmed."},
+
+// —— Plant Tropisms ——
+{id:120, topic:"Oral", type:"oral", subtopic:"Plant Tropisms", emoji:"🌱",
+ q:"What is a tropism? Name THREE things that can cause a plant tropism, according to the textbook.",
+ a:"A tropism is the response of a plant to something in its environment — it changes its direction or pattern of growth.\nThree causes of tropisms from the textbook:\n1. Light — plants grow toward the light source.\n2. Water — roots grow toward the water source.\n3. Gravity — roots grow downward; stems grow upward.\n(The textbook also mentions chemicals and heat as causes of tropisms.)"},
+{id:121, topic:"Oral", type:"oral", subtopic:"Plant Tropisms", emoji:"🌱",
+ q:"What did Charles Darwin discover about plant tropisms? What did later experiments find?",
+ a:"Charles Darwin did an experiment and concluded that something in the TIP of the plant caused it to bend. He showed that the tip controls the direction of growth.\nLater experiments showed that this 'something' was a CHEMICAL that all plants have. Plants use this chemical to grow and respond to stimuli."},
+{id:122, topic:"Oral", type:"oral", subtopic:"Plant Tropisms", emoji:"🌱",
+ q:"How do plant roots and stems each respond to gravity? What is the purpose of each response?",
+ a:"Roots grow DOWNWARD toward gravity — this anchors the plant in the soil and helps it absorb water and nutrients.\nStems grow UPWARD away from gravity — this allows the leaves to reach sunlight, which is needed for photosynthesis.\nThese opposite responses work together to help the plant survive."},
+{id:123, topic:"Oral", type:"oral", subtopic:"Plant Tropisms", emoji:"🌱",
+ q:"What is the difference between a stimulus and a tropism? Give one example of each.",
+ a:"A STIMULUS is something in the environment that causes a living thing to react — for example, light shining on a plant.\nA TROPISM is the plant's RESPONSE to that stimulus — for example, the plant grows toward the light source.\nSimply put: stimulus = the cause; tropism = the plant's reaction."},
+
+// —— Mimicry ——
+{id:130, topic:"Oral", type:"oral", subtopic:"Mimicry", emoji:"🐍",
+ q:"What is mimicry? Give the example from the textbook and explain why it works.",
+ a:"Mimicry is when one kind of living thing looks like another kind. It is an adaptation that helps an organism avoid predators.\nTextbook example: The hoverfly does NOT have a stinger, but it looks like a honeybee. Predators avoid it because they think it can sting — even though it cannot.\nMimicry works because predators have learned to avoid the dangerous animal, so they also avoid the mimic."},
+{id:131, topic:"Oral", type:"oral", subtopic:"Mimicry", emoji:"🐍",
+ q:"What is the difference between mimicry and camouflage? Give one example of each.",
+ a:"Camouflage — the organism blends in with the COLORS and SHAPES of its environment so predators cannot easily see it.\nExample: The Arctic fox's fur turns white in winter to match the snow.\n\nMimicry — the organism looks like ANOTHER ORGANISM (usually a more dangerous one) to scare away predators.\nExample: The hoverfly looks like a honeybee to avoid predators.\n\nKey difference: Camouflage hides in the environment; mimicry imitates another animal."},
+{id:132, topic:"Oral", type:"oral", subtopic:"Mimicry", emoji:"🐍",
+ q:"Is mimicry a physical adaptation or a behavioral adaptation? Explain using the textbook example.",
+ a:"Mimicry is primarily a PHYSICAL adaptation because it involves the organism's body appearance — the colors and patterns that make it look like another animal.\nTextbook example: The hoverfly has a body that physically looks like a honeybee (yellow and black stripes). This physical appearance is what fools predators, not any behavior."},
+{id:133, topic:"Oral", type:"oral", subtopic:"Mimicry", emoji:"🐍",
+ q:"How does mimicry help the hoverfly survive? What would happen if the hoverfly did NOT look like a honeybee?",
+ a:"Mimicry helps the hoverfly survive by making predators think it is a dangerous honeybee with a stinger. Predators avoid it to protect themselves.\nIf the hoverfly did NOT look like a honeybee, predators would know it is harmless and eat it. Without this mimicry adaptation, the hoverfly would be much easier for predators to catch and eat."},
+];
+
+const ORAL_TOPICS=[
+  {key:"Desert Plants",  emoji:"🌵", label:"Desert Plants"},
+  {key:"Interactions",   emoji:"🦅", label:"Interactions"},
+  {key:"Plant Tropisms", emoji:"🌱", label:"Plant Tropisms"},
+  {key:"Mimicry",        emoji:"🐍", label:"Mimicry"},
+];
+const TYPE_LABELS={spell:"Spelling",mc:"Multiple Choice",tf:"True / False",oral:"Oral Exam"};
+
+// ── STATE ──────────────────────────────────────────────
+let selTopic="All Topics",selType="All Types",selMode="random",selCount=10;
+let quiz=[],qIdx=0,answers={},scoreC=0,scoreW=0,answered=false,currentQ=null;
+const SS=window.speechSynthesis;
+
+function norm(s){return(s||"").toLowerCase().trim().replace(/\s+/g," ");}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function getPool(){return ALL_Q.filter(q=>(selTopic==="All Topics"||q.topic===selTopic)&&(selType==="All Types"||q.type===selType));}
+
+// ── SPEECH ────────────────────────────────────────────
+function speak(text,rate=0.88){
+  if(!SS)return;SS.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="en-US";u.rate=rate;u.pitch=1.05;
+  const vs=SS.getVoices();
+  const pv=vs.find(v=>v.lang.startsWith("en")&&(v.name.includes("Samantha")||v.name.includes("Google")||v.name.includes("Natural")));
+  if(pv)u.voice=pv;
+  SS.speak(u);
+}
+function speakQuestion(){if(currentQ)speak(currentQ.q);}
+function speakAnswer(){if(currentQ)speak(currentQ.a.replace(/\n/g,". "),0.82);}
+function stopSpeech(){SS&&SS.cancel();}
+
+// ── SCREENS ───────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.getElementById("homebtn").style.display=id==="homeScreen"?"none":"block";
+  stopSpeech();
+  if(typeof resetRecorder==="function")resetRecorder();
+}
+function goHome(){showScreen("homeScreen");buildHome();}
+
+// ── HOME ──────────────────────────────────────────────
+function buildHome(){
+  const written=ALL_Q.filter(q=>q.type!=="oral").length;
+  const oral=ALL_Q.filter(q=>q.type==="oral").length;
+  document.getElementById("totalCount").textContent=written+" written + "+oral+" oral questions";
+  const grid=document.getElementById("oralTopicsGrid");grid.innerHTML="";
+  ORAL_TOPICS.forEach(ot=>{
+    const cnt=ALL_Q.filter(q=>q.type==="oral"&&q.subtopic===ot.key).length;
+    const d=document.createElement("div");d.className="oral-topic-card";
+    d.innerHTML=`<div class="ot-emoji">${ot.emoji}</div><div class="ot-title">${ot.label}</div><div class="ot-count">${cnt} questions</div>`;
+    d.onclick=()=>startOralTopic(ot.key);grid.appendChild(d);
+  });
+  buildSeg("topicSeg",["All Topics","Ecosystems","Adaptations","Plants"],selTopic,v=>{selTopic=v;buildHome();});
+  buildSeg("typeSeg",["All Types","spell","mc","tf"],selType,v=>{selType=v;buildHome();},{"All Types":"All",spell:"Spelling",mc:"Multiple Choice",tf:"True/False"});
+  buildSeg("modeSeg",["random","ordered"],selMode,v=>{selMode=v;buildHome();},{random:"🔀 Random",ordered:"📋 In Order"});
+  refreshPool();
+}
+function buildSeg(cid,opts,active,cb,labels={}){
+  const el=document.getElementById(cid);el.innerHTML="";
+  opts.forEach(o=>{const b=document.createElement("button");b.className="seg-btn"+(o===active?" active":"");b.textContent=labels[o]||o;b.onclick=()=>cb(o);el.appendChild(b);});
+}
+function refreshPool(){
+  const p=getPool(),max=p.length||1;
+  const r=document.getElementById("countRange");r.max=max;if(selCount>max)selCount=max;r.value=selCount;
+  document.getElementById("rangeMax").textContent=max;
+  document.getElementById("countLbl").textContent="Questions: "+Math.min(selCount,p.length)+" / "+p.length+" available";
+}
+function updateCount(){selCount=+document.getElementById("countRange").value;refreshPool();}
+
+// ── START ─────────────────────────────────────────────
+function startQuiz(customQ){
+  let pool=customQ||getPool();
+  if(selMode==="random"&&!customQ)pool=shuffle(pool);
+  quiz=pool.slice(0,Math.min(selCount,pool.length));
+  qIdx=0;answers={};scoreC=0;scoreW=0;answered=false;
+  showScreen("quizScreen");renderQuestion();
+}
+function startOralTopic(sub){
+  quiz=shuffle(ALL_Q.filter(q=>q.type==="oral"&&q.subtopic===sub));
+  qIdx=0;answers={};scoreC=0;scoreW=0;answered=false;
+  showScreen("quizScreen");renderQuestion();
+}
+function retryAll(){startQuiz(shuffle(quiz));}
+function retryWrong(){const w=quiz.filter(q=>answers[q.id]!=="__oral__"&&norm(answers[q.id]||"")!==norm(q.a));if(w.length)startQuiz(shuffle(w));}
+
+// ── RENDER ────────────────────────────────────────────
+function renderQuestion(){
+  answered=false;stopSpeech();
+  const q=quiz[qIdx];currentQ=q;const total=quiz.length;
+  document.getElementById("progText").textContent="Q "+(qIdx+1)+" / "+total;
+  document.getElementById("scoreC").textContent="✓ "+scoreC;
+  document.getElementById("scoreW").textContent="✗ "+scoreW;
+  document.getElementById("progFill").style.width=(qIdx/total*100)+"%";
+  const badge=document.getElementById("qBadge");badge.textContent=q.subtopic||q.topic;badge.className="badge badge-"+q.topic;
+  document.getElementById("qType").textContent=TYPE_LABELS[q.type];
+  document.getElementById("qText").textContent=q.q;
+  ["spellWrap","mcWrap","tfWrap","oralWrap"].forEach(id=>document.getElementById(id).style.display="none");
+  const fb=document.getElementById("feedbackPanel");fb.style.display="none";fb.className="";
+  document.getElementById("skipBtn").style.display="block";
+  if(q.type==="spell"){
+    document.getElementById("spellWrap").style.display="block";
+    const inp=document.getElementById("spellInput");inp.value="";inp.className="";inp.disabled=false;
+    document.getElementById("checkSpellBtn").style.display="inline-flex";
+    setTimeout(()=>inp.focus(),80);
+    inp.onkeydown=e=>{if(e.key==="Enter"&&inp.value.trim())checkSpell();};
+  }
+  if(q.type==="mc"){
+    const w=document.getElementById("mcWrap");w.style.display="block";w.innerHTML="";
+    q.choices.forEach(ch=>{const b=document.createElement("button");b.className="choice-btn";b.textContent=ch;b.onclick=()=>submitAnswer(ch);w.appendChild(b);});
+  }
+  if(q.type==="tf"){
+    document.getElementById("tfWrap").style.display="flex";
+    ["tfTrue","tfFalse"].forEach(id=>{document.getElementById(id).className="tf-btn tf-"+id.replace("tf","").toLowerCase();document.getElementById(id).disabled=false;});
+  }
+  if(q.type==="oral"){
+    document.getElementById("oralWrap").style.display="block";
+    document.getElementById("oralAnswerBox").style.display="none";
+    document.getElementById("oralAnswerBox").innerHTML="";
+    document.getElementById("oralNextBtn").style.display="none";
+    document.getElementById("skipBtn").style.display="none";
+    // reset recording UI
+    resetRecorder();
+    setTimeout(()=>speakQuestion(),400);
+  }
+}
+
+// ── RECORDING ─────────────────────────────────────────
+let mediaRecorder=null, recChunks=[], recTimerInterval=null, recSeconds=0, recBlob=null, recURL=null, micStream=null;
+
+// Pick the best supported MIME type for this browser (Safari needs mp4/aac)
+function getBestMime(){
+  const types=["audio/mp4","audio/aac","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/ogg"];
+  for(const t of types){if(typeof MediaRecorder!=="undefined"&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))return t;}
+  return ""; // let browser decide
+}
+
+function setRecStatus(msg,color="#64748b"){
+  const el=document.getElementById("recStatus");el.textContent=msg;el.style.color=color;
+}
+function setRecBtn(label,recording=false){
+  const b=document.getElementById("recBtn");
+  b.textContent=label;
+  b.className="btn btn-rec"+(recording?" recording":"");
+}
+
+function resetRecorder(){
+  // stop any active recording
+  try{if(mediaRecorder&&mediaRecorder.state!=="inactive")mediaRecorder.stop();}catch(e){}
+  try{if(micStream)micStream.getTracks().forEach(t=>t.stop());}catch(e){}
+  clearInterval(recTimerInterval);
+  mediaRecorder=null;micStream=null;recChunks=[];recSeconds=0;recBlob=null;
+  if(recURL){URL.revokeObjectURL(recURL);recURL=null;}
+  setRecBtn("⏺ Start Recording");
+  document.getElementById("recTimer").textContent="";
+  setRecStatus("Tap the button to record your spoken answer.");
+  // hide playback
+  const a=document.getElementById("myRecording");
+  a.pause();a.removeAttribute("src");a.load();a.style.display="none";
+  const a2=document.getElementById("myRecording2");
+  a2.pause();a2.removeAttribute("src");a2.load();
+  document.getElementById("recPlayRow").style.display="none";
+  document.getElementById("recCompare").style.display="none";
+}
+
+async function toggleRecord(){
+  if(mediaRecorder&&mediaRecorder.state==="recording"){
+    // ── STOP ──
+    mediaRecorder.stop(); // onstop will fire and set up playback
+    clearInterval(recTimerInterval);
+    setRecBtn("⏺ Record Again");
+    setRecStatus("Saving recording…","#d97706");
+  } else {
+    // ── START ──
+    // clean up previous recording
+    const prevA=document.getElementById("myRecording");
+    prevA.pause();prevA.removeAttribute("src");prevA.load();prevA.style.display="none";
+    document.getElementById("recPlayRow").style.display="none";
+    document.getElementById("recCompare").style.display="none";
+    recChunks=[];recSeconds=0;recBlob=null;
+    if(recURL){URL.revokeObjectURL(recURL);recURL=null;}
+
+    try{
+      micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    }catch(err){
+      if(err.name==="NotAllowedError"||err.name==="PermissionDeniedError"){
+        setRecStatus("⚠️ Microphone permission denied. Please allow microphone access in your browser settings.","#dc2626");
+      } else {
+        setRecStatus("⚠️ Could not access microphone: "+err.message,"#dc2626");
+      }
+      return;
+    }
+
+    const mime=getBestMime();
+    const options=mime?{mimeType:mime}:{};
+    try{
+      mediaRecorder=new MediaRecorder(micStream,options);
+    }catch(e){
+      mediaRecorder=new MediaRecorder(micStream); // fallback: no options
+    }
+
+    mediaRecorder.ondataavailable=e=>{
+      if(e.data&&e.data.size>0)recChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop=()=>{
+      // stop mic
+      try{micStream.getTracks().forEach(t=>t.stop());}catch(e){}
+      if(recChunks.length===0){setRecStatus("⚠️ No audio recorded. Please try again.","#dc2626");return;}
+
+      // build blob — use recorded type if available, else sniff from chunks
+      const blobType=mediaRecorder.mimeType||mime||"audio/webm";
+      recBlob=new Blob(recChunks,{type:blobType});
+      recURL=URL.createObjectURL(recBlob);
+
+      // primary player
+      const a=document.getElementById("myRecording");
+      a.src=recURL;
+      a.load(); // important — force reload
+      a.style.display="block";
+      document.getElementById("recPlayRow").style.display="flex";
+
+      // secondary (compare) player
+      const a2=document.getElementById("myRecording2");
+      a2.src=recURL;
+      a2.load();
+
+      setRecStatus("✅ Recording ready! Press ▶ play to listen.","#16a34a");
+    };
+
+    mediaRecorder.onerror=e=>{
+      setRecStatus("⚠️ Recording error: "+e.error,"#dc2626");
+      clearInterval(recTimerInterval);
+      setRecBtn("⏺ Start Recording");
+    };
+
+    mediaRecorder.start(100); // collect data every 100ms for reliability
+    setRecBtn("⏹ Stop Recording",true);
+    setRecStatus("🔴 Recording… speak your answer now.","#dc2626");
+
+    recTimerInterval=setInterval(()=>{
+      recSeconds++;
+      const m=Math.floor(recSeconds/60),s=String(recSeconds%60).padStart(2,"0");
+      document.getElementById("recTimer").textContent=(m>0?m+":":"")+s+"s";
+    },1000);
+  }
+}
+
+// ── ORAL REVEAL ───────────────────────────────────────
+function revealOral(){
+  const q=quiz[qIdx];
+  const box=document.getElementById("oralAnswerBox");
+  const lines=q.a.split("\n").map(l=>l.trim()).filter(Boolean);
+  box.innerHTML="<b>📖 Model Answer (from textbook):</b>"+lines.map(l=>`<span style="display:block;margin-top:6px">${l}</span>`).join("");
+  box.style.display="block";
+  document.getElementById("oralNextBtn").style.display="inline-flex";
+  // show compare panel if there's a recording
+  if(recBlob){document.getElementById("recCompare").style.display="block";}
+  speak(q.a.replace(/\n/g,". "),0.82);
+  answers[q.id]="__oral__";scoreC++;
+  document.getElementById("scoreC").textContent="✓ "+scoreC;
+  document.getElementById("progFill").style.width=((qIdx+1)/quiz.length*100)+"%";
+  answered=true;
+}
+
+// ── WRITTEN ───────────────────────────────────────────
+function checkSpell(){if(answered)return;const v=document.getElementById("spellInput").value.trim();if(!v)return;submitAnswer(v);}
+function submitAnswer(val){
+  if(answered)return;answered=true;
+  const q=quiz[qIdx];const correct=norm(val)===norm(q.a);
+  answers[q.id]=val;
+  if(val==="__skipped__"){scoreW++;}else if(correct){scoreC++;}else{scoreW++;}
+  document.getElementById("skipBtn").style.display="none";
+  if(q.type==="spell"){const inp=document.getElementById("spellInput");inp.disabled=true;inp.className=correct?"correct":"wrong";document.getElementById("checkSpellBtn").style.display="none";}
+  if(q.type==="mc"){document.querySelectorAll("#mcWrap .choice-btn").forEach(btn=>{btn.disabled=true;const t=btn.textContent===val,r=norm(btn.textContent)===norm(q.a);if(r){btn.classList.add("correct");btn.innerHTML+=` <span>✓</span>`;}else if(t){btn.classList.add("wrong");btn.innerHTML+=` <span>✗</span>`;}else btn.classList.add("dim");});}
+  if(q.type==="tf"){document.getElementById("tfTrue").disabled=true;document.getElementById("tfFalse").disabled=true;["true","false"].forEach(o=>{const b=document.getElementById("tf"+o.charAt(0).toUpperCase()+o.slice(1));if(o===norm(q.a))b.classList.add("correct");else if(o===val)b.classList.add("wrong");else b.classList.add("dim");});}
+  const fb=document.getElementById("feedbackPanel");fb.style.display="block";fb.className=correct?"correct":"wrong";
+  const ic=document.getElementById("fbIcon");ic.textContent=correct?"✓":"✗";ic.className="fb-icon "+(correct?"correct":"wrong");
+  const lb=document.getElementById("fbLabel");lb.textContent=correct?"Correct!":"Not quite…";lb.className="fb-label "+(correct?"correct":"wrong");
+  const dt=document.getElementById("fbDetail");
+  if(correct){dt.innerHTML="";}else{const sh=val==="__skipped__"?"(skipped)":val;dt.innerHTML=`<div class="fb-your">Your answer: <b>${sh}</b></div><div class="fb-ans">✓ Correct answer: <span>${q.a}</span></div>`;}
+  const last=qIdx===quiz.length-1;
+  document.getElementById("nextBtn").textContent=last?"See Results 🏁":"Next Question →";
+  document.getElementById("progFill").style.width=((qIdx+1)/quiz.length*100)+"%";
+  document.getElementById("scoreC").textContent="✓ "+scoreC;
+  document.getElementById("scoreW").textContent="✗ "+scoreW;
+}
+function nextQuestion(){stopSpeech();resetRecorder();if(qIdx===quiz.length-1)showResults();else{qIdx++;renderQuestion();}}
+
+// ── RESULTS ───────────────────────────────────────────
+function showResults(){
+  showScreen("resultScreen");
+  const total=quiz.length,pct=Math.round(scoreC/total*100);
+  const g=pct>=90?{l:"Excellent! 🌟",c:"#16a34a"}:pct>=75?{l:"Good Job! 👍",c:"#0284c7"}:pct>=60?{l:"Keep Practicing 📚",c:"#d97706"}:{l:"Need More Review 💪",c:"#dc2626"};
+  document.getElementById("resPct").textContent=pct+"%";document.getElementById("resPct").style.color=g.c;
+  document.getElementById("resLabel").textContent=g.l;document.getElementById("resSub").textContent=scoreC+" / "+total+" correct";
+  const wrong=quiz.filter(q=>answers[q.id]!=="__oral__"&&norm(answers[q.id]||"")!==norm(q.a));
+  const rb=document.getElementById("retryWrongBtn");
+  if(wrong.length>0){rb.style.display="inline-flex";rb.textContent="Retry Wrong ("+wrong.length+")";}else{rb.style.display="none";}
+  const sec=document.getElementById("reviewSection");
+  if(wrong.length===0){sec.innerHTML=`<div class="perfect">🎉 All answers correct!</div>`;return;}
+  let html=`<div class="review-title">✗ Review These (${wrong.length})</div>`;
+  wrong.forEach(q=>{const u=answers[q.id]||"__skipped__";html+=`<div class="review-item"><div class="q-meta"><span class="badge badge-${q.topic}">${q.subtopic||q.topic}</span><span class="q-type">${TYPE_LABELS[q.type]}</span></div><div class="review-q">${q.q}</div><div class="review-your">✗ Your answer: <b>${u==="__skipped__"?"(skipped)":u}</b></div><div class="review-correct">✓ Correct answer: <b>${q.a}</b></div></div>`;});
+  sec.innerHTML=html;
+}
+if(SS&&SS.onvoiceschanged!==undefined)SS.onvoiceschanged=()=>SS.getVoices();
+buildHome();
+</script>
+</body>
+</html>
